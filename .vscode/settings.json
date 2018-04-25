@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "stdio.h": "c",
+        "stdlib.h": "c",
+        "readersstarvation.h": "c",
+        "writersstarvation.h": "c"
+    }
+}
