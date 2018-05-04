@@ -3,6 +3,11 @@
         "stdio.h": "c",
         "stdlib.h": "c",
         "readersstarvation.h": "c",
-        "writersstarvation.h": "c"
+        "writersstarvation.h": "c",
+        "unistd.h": "c",
+        "semaphore.h": "c",
+        "utime.h": "c",
+        "priorityqueue.h": "c",
+        "nostarvation.h": "c"
     }
 }

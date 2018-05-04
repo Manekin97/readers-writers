@@ -66,7 +66,7 @@ void Init(int readersCount, int writersCount){
     pthread_t readers[readersCount];
     pthread_t writers[writersCount];
     
-    if(sem_init(&readersSem, 0, readersCount) == -1){
+    if(sem_init(&readersSem, 0, 1) == -1){
         printf("%s", strerror(errno));
     }
 
@@ -75,7 +75,7 @@ void Init(int readersCount, int writersCount){
     }
 
     for(int i = 0; i < readersCount; i++) {
-        int *nr = malloc(sizeof(int));
+        int *nr = (int*)malloc(sizeof(int));
         *nr = i;
         if (pthread_create(&readers[i], NULL, &Reader, (void*)nr)){
             printf("Error creating reader\n");
@@ -83,7 +83,7 @@ void Init(int readersCount, int writersCount){
     }
 
     for(int i = 0; i < writersCount; i++) {
-        int *nr = malloc(sizeof(int));
+        int *nr = (int*)malloc(sizeof(int));
         *nr = i;    
         if (pthread_create(&writers[i], NULL, &Writer, (void*)nr)){
             printf("Error creating writer\n");
