@@ -1,24 +1,23 @@
-#include <stdlib.h> 
-#include <stdio.h> 
+#include "queueState.h"
+#include <errno.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <utime.h>
-#include <errno.h>
-#include <string.h>
 
-#define KRED  "\x1B[31m"
+queueState_t* state;
 
+sem_t readTry;
+pthread_mutex_t wmutex;
 
-sem_t readersSem;
-pthread_mutex_t writersSem;
 int readersInside;
-int readersCount;
-int writersCount;
+int writersInside;
 
+void* Reader(void* value);
 
-void *Reader(void *value);
-
-void *Writer(void *value);
+void* Writer(void* value);
 
 void Init(int readersCount, int writersCount);

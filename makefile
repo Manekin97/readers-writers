@@ -7,7 +7,7 @@ LDIR =lib
 
 LIBS=-lm -pthread
 
-_DEPS = ReadersStarvation.h WritersStarvation.h NoStarvation.h PriorityQueue.h
+_DEPS = ReadersStarvation.h WritersStarvation.h NoStarvation.h PriorityQueue.h queueState.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
 _OBJ = main.o ReadersStarvation.o WritersStarvation.o NoStarvation.o PriorityQueue.o

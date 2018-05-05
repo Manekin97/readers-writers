@@ -8,6 +8,8 @@
         "semaphore.h": "c",
         "utime.h": "c",
         "priorityqueue.h": "c",
-        "nostarvation.h": "c"
+        "nostarvation.h": "c",
+        "string.h": "c",
+        "queuestate.h": "c"
     }
 }

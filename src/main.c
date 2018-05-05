@@ -1,23 +1,30 @@
-#include <stdlib.h> 
-#include <stdio.h> 
+#include "NoStarvation.h"
 #include "ReadersStarvation.h"
 #include "WritersStarvation.h"
-#include "NoStarvation.h"
+#include <stdio.h>
+#include <stdlib.h>
 
-int main(int argc, char *const argv[]) {
-    char *param = argv[3]; 
-    readersCount = atoi(argv[1]);
-    writersCount = atoi(argv[2]);
+int main(int argc, char* const argv[]) {
+    const int readersCount = atoi(argv[1]);
+    const int writersCount = atoi(argv[2]);
 
-    if(strcmp(param, "w") == 0) {
-        Init(readersCount, writersCount);
+    unsigned int argument;
+    while ((argument = getopt(argc, argv, "rwn")) != -1) {
+        switch (argument) {
+        case 'r':
+            Init_r(readersCount, writersCount);
+            break;
+        case 'w':
+            Init(readersCount, writersCount);
+            break;
+        case 'n':
+            Init_o(readersCount, writersCount);
+            break;
+        case '?':
+            printf("Wrong Arguments. \n");
+            exit(EXIT_FAILURE);
+        }
     }
 
-    if(strcmp(param, "r") == 0) {
-        Init_r(readersCount, writersCount);
-    }
-
-    if(strcmp(param, "o") == 0) {
-        Init_o(readersCount, writersCount);
-    }
+    exit(EXIT_SUCCESS);
 }
