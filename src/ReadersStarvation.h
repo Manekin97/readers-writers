@@ -8,13 +8,9 @@
 #include <unistd.h>
 #include <utime.h>
 
-queueState_t* state;
-
-int readersInside;
-int writersInside;
-
-sem_t readTry, resource;
-pthread_mutex_t rmutex, wmutex;
+int readers, writers, active_writers;
+pthread_mutex_t m;
+pthread_cond_t writersQ, readersQ;
 
 void* Reader_r(void* value);
 

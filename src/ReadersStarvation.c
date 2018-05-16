@@ -1,147 +1,124 @@
 #include "ReadersStarvation.h"
 
-void *Reader_r(void *value) {
-    queueState_t* qstate = (queueState_t*)value;
-
+void* Reader_r(void* value) {
     while (1) {
-        if (sem_wait(&readTry) == -1) { //  Indicate a reader is trying to enter
+        if (pthread_mutex_lock(&m) != 0) {
             printf("%s", strerror(errno));
         }
 
-        if (pthread_mutex_lock(&rmutex) == -1) { //  lock entry section to avoid race condition with other readers
-            printf("%s", strerror(errno));
-        }
-
-        readersInside++; //  Increase the number of readers inside
-        qstate->readersQ--; //  Decrease the number of readers in queue
-        printf("ReaderQ: %d WriterQ: %d [in: R:%d W:%d]\n", qstate->readersQ, qstate->writersQ, readersInside, writersInside);
-
-        if (readersInside == 1) { //  if it's the first reader
-            if (sem_wait(&resource) == -1) { //  lock the resource
+        while (!(writers == 0)) {
+            if (pthread_cond_wait(&readersQ, &m) != 0) {
                 printf("%s", strerror(errno));
             }
         }
 
-        if (pthread_mutex_unlock(&rmutex) == -1) { //  Let other readers in
+        readers++;
+        printf("[in: R:%d W:%d]\n", readers, active_writers);
+
+        if (pthread_mutex_unlock(&m) != 0) {
             printf("%s", strerror(errno));
         }
 
-        if (sem_post(&readTry) == -1) { //  Indicate a reader is done trying to enter
+        sleep(1);
+
+        if (pthread_mutex_lock(&m) != 0) {
             printf("%s", strerror(errno));
         }
 
-        sleep(1); //  Simulate reading
-
-        if (pthread_mutex_lock(&rmutex) == -1) { //  Indicate a reader is trying to leave
-            printf("%s", strerror(errno));
-        }
-
-        readersInside--; //  Decrease the number of readers inside
-        qstate->readersQ++; //  Increase the number of readers in queue
-        printf("ReaderQ: %d WriterQ: %d [in: R:%d W:%d]\n", qstate->readersQ, qstate->writersQ, readersInside, writersInside);
-
-        if (readersInside == 0) { // If it's the last reader
-            if (sem_post(&resource) == -1) { //  Unlock the resource
+        if (--readers == 0) {
+            if (pthread_cond_signal(&writersQ) != 0) {
                 printf("%s", strerror(errno));
             }
         }
 
-        if (pthread_mutex_unlock(&rmutex) == -1) { //  Indicate a reader is done trying to leave
+        printf("[in: R:%d W:%d]\n", readers, active_writers);
+
+        if (pthread_mutex_unlock(&m) != 0) {
             printf("%s", strerror(errno));
         }
     }
 }
 
-void *Writer_r(void *value) {
-    queueState_t* qstate = (queueState_t*)value;
-
+void* Writer_r(void* value) {
     while (1) {
-        if (pthread_mutex_lock(&wmutex) == -1) { //  Indicate a writer is trying to enter
+        if (pthread_mutex_lock(&m) != 0) {
             printf("%s", strerror(errno));
         }
 
-        writersInside++; //  Increase the number of writers inside
-        qstate->writersQ--; //  Decrease the number of writers in queue
-        printf("ReaderQ: %d WriterQ: %d [in: R:%d W:%d]\n", qstate->readersQ, qstate->writersQ, readersInside, writersInside);
+        writers++;
 
-        if (writersInside == 1) { //  if it's the first writer
-            if (sem_wait(&readTry) == -1) { //  Lock the readers
+        while (!((readers == 0) && (active_writers == 0))) {
+            if (pthread_cond_wait(&writersQ, &m) != 0) {
                 printf("%s", strerror(errno));
             }
         }
 
-        if (pthread_mutex_unlock(&wmutex) == -1) { //  Indicate a writer is done trying to enter
+        active_writers++;
+        printf("[in: R:%d W:%d]\n", readers, active_writers);
+
+        if (pthread_mutex_unlock(&m) != 0) {
             printf("%s", strerror(errno));
         }
 
-        if (sem_wait(&resource) == -1) { //  Lock the resource
+        sleep(1);
+
+        if (pthread_mutex_lock(&m) != 0) {
             printf("%s", strerror(errno));
         }
 
-        sleep(1); //  Simulate writing
+        writers--;
+        active_writers--;
+        printf("[in: R:%d W:%d]\n", readers, active_writers);
 
-        if (sem_post(&resource) == -1) { // Unlock the resource
-            printf("%s", strerror(errno));
-        }
-
-        if (pthread_mutex_lock(&wmutex) == -1) { //  Indicate a writer is trying to leave
-            printf("%s", strerror(errno));
-        }
-
-        writersInside--; //  Decrease the number of writers inside
-        qstate->writersQ++; //  Increase the number of writers in queue
-        printf("ReaderQ: %d WriterQ: %d [in: R:%d W:%d]\n", qstate->readersQ, qstate->writersQ, readersInside, writersInside);
-
-        if (writersInside == 0) { //  if it's the last writer
-            if (sem_post(&readTry) == -1) { //  Unlock the readers
+        if (writers > 0) {
+            if (pthread_cond_signal(&writersQ) != 0) {
+                printf("%s", strerror(errno));
+            }
+        } else {
+            if (pthread_cond_broadcast(&readersQ) != 0) {
                 printf("%s", strerror(errno));
             }
         }
 
-        if (pthread_mutex_unlock(&wmutex) == -1) { //  Indicate a writer is done trying to leave
+        if (pthread_mutex_unlock(&m) != 0) {
             printf("%s", strerror(errno));
         }
     }
 }
 
 void Init_r(int readersCount, int writersCount) {
-   /* Initialize queue status */
-    state = malloc(sizeof(queueState_t));
-    state->readersQ = readersCount;
-    state->writersQ = writersCount;
-
-    readersInside = 0;
-    writersInside = 0;
+    readers = 0;
+    writers = 0;
+    active_writers = 0;
 
     /* Initialize readers and writers set */
     pthread_t readers[readersCount];
     pthread_t writers[writersCount];
 
-    if (sem_init(&readTry, 0, 1) == -1) {
+    if (pthread_cond_init(&readersQ, NULL) != 0) {
         printf("%s", strerror(errno));
     }
 
-    if (sem_init(&resource, 0, 1) == -1) {
+    if (pthread_cond_init(&writersQ, NULL) != 0) {
         printf("%s", strerror(errno));
     }
 
-    if (pthread_mutex_init(&rmutex, NULL) == -1) {
+    if (pthread_mutex_init(&m, NULL) == -1) {
         printf("%s", strerror(errno));
     }
 
-    if (pthread_mutex_init(&wmutex, NULL) == -1) {
-        printf("%s", strerror(errno));
-    }
-
-    /* Create threads */    
+    /* Create threads */
+    int* ptr = (int*)(malloc(sizeof(int)));
     for (int i = 0; i < readersCount; i++) {
-        if (pthread_create(&readers[i], NULL, &Reader_r, (void*)state)) {
+        *ptr = i;
+        if (pthread_create(&readers[i], NULL, &Reader_r, (void*)ptr)) {
             printf("Error creating reader\n");
         }
     }
 
     for (int i = 0; i < writersCount; i++) {
-        if (pthread_create(&writers[i], NULL, &Writer_r, (void*)state)) {
+        *ptr = i;
+        if (pthread_create(&writers[i], NULL, &Writer_r, (void*)ptr)) {
             printf("Error creating writer\n");
         }
     }

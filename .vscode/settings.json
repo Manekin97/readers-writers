@@ -10,6 +10,7 @@
         "priorityqueue.h": "c",
         "nostarvation.h": "c",
         "string.h": "c",
-        "queuestate.h": "c"
+        "queuestate.h": "c",
+        "pthread.h": "c"
     }
 }
