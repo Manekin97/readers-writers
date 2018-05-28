@@ -1,8 +1,6 @@
 #include "NoStarvation.h"
 
 void *Reader_o(void *value) {
-    queueState_t* qstate = (queueState_t*)value;
-
     while (1) {
         Wait(&serviceQueue, GetHighestWaitingPriority(&serviceQueue)); //  wait in line to be serviced
 
@@ -17,8 +15,8 @@ void *Reader_o(void *value) {
         }
 
         readersInside++; //  Increase the number of readers inside
-        qstate->readersQ--; //  Decrease the number of readers in queue
-        printf("ReaderQ: %d WriterQ: %d [in: R:%d W:%d]\n", qstate->readersQ, qstate->writersQ, readersInside, writersInside);
+        readersInQ--; //  Decrease the number of readers in queue
+        printf("ReaderQ: %d WriterQ: %d [in: R:%d W:%d]\n", readersInQ, writersInQ, readersInside, writersInside);
 
         Post(&serviceQueue); //  let next in line be serviced
 
@@ -33,8 +31,8 @@ void *Reader_o(void *value) {
         }
 
         readersInside--; //  Decrease the number of readers inside
-        qstate->readersQ++; //  Increase the number of readers in queue
-        printf("ReaderQ: %d WriterQ: %d [in: R:%d W:%d]\n", qstate->readersQ, qstate->writersQ, readersInside, writersInside);
+        readersInQ++; //  Increase the number of readers in queue
+        printf("ReaderQ: %d WriterQ: %d [in: R:%d W:%d]\n", readersInQ, writersInQ, readersInside, writersInside);
 
         if (readersInside == 0) { // if there are no readers left
             if (sem_post(&resourceAccess) == -1) { //  request exclusive access to readCount
@@ -49,8 +47,6 @@ void *Reader_o(void *value) {
 }
 
 void *Writer_o(void *value) {
-    queueState_t* qstate = (queueState_t*)value;
-
     while (1) {
         Wait(&serviceQueue, GetHighestWaitingPriority(&serviceQueue)); //  wait in line to be serviced
 
@@ -61,14 +57,14 @@ void *Writer_o(void *value) {
         Post(&serviceQueue); //  let next in line be serviced
 
         writersInside++; //  Increase the number of writers inside
-        qstate->writersQ--; //  Decrease the number of writers in queue
-        printf("ReaderQ: %d WriterQ: %d [in: R:%d W:%d]\n", qstate->readersQ, qstate->writersQ, readersInside, writersInside);
+        writersInQ--; //  Decrease the number of writers in queue
+        printf("ReaderQ: %d WriterQ: %d [in: R:%d W:%d]\n", readersInQ, writersInQ, readersInside, writersInside);
 
         sleep(1);
 
         writersInside--; //  Decrease the number of writers inside
-        qstate->writersQ++; //  Increase the number of writers in queue
-        printf("ReaderQ: %d WriterQ: %d [in: R:%d W:%d]\n", qstate->readersQ, qstate->writersQ, readersInside, writersInside);
+       writersInQ++; //  Increase the number of writers in queue
+        printf("ReaderQ: %d WriterQ: %d [in: R:%d W:%d]\n", readersInQ, writersInQ, readersInside, writersInside);
 
         if (sem_post(&resourceAccess) == -1) { // release resource access for next reader/writer
             printf("%s", strerror(errno));
@@ -78,12 +74,10 @@ void *Writer_o(void *value) {
 
 void Init_o(int readersCount, int writersCount){
     /* Initialize queue status */
-    state = malloc(sizeof(queueState_t));
-    state->readersQ = readersCount;
-    state->writersQ = writersCount;
-
     readersInside = 0;
     writersInside = 0;
+    readersInQ = readersCount;
+    writersInQ = writersCount;
 
     /* Initialize readers and writers set */
     pthread_t readers[readersCount];
@@ -119,14 +113,17 @@ void Init_o(int readersCount, int writersCount){
     }
 
     /* Create threads */
+    int* ptr = (int*)(malloc(sizeof(int)));
     for (int i = 0; i < readersCount; i++) {
-        if (pthread_create(&readers[i], NULL, &Reader_o, (void*)state)) {
+        *ptr = i;
+        if (pthread_create(&readers[i], NULL, &Reader_o, (void*)ptr)) {
             printf("Error creating reader\n");
         }
     }
 
     for (int i = 0; i < writersCount; i++) {
-        if (pthread_create(&writers[i], NULL, &Writer_o, (void*)state)) {
+        *ptr = i;
+        if (pthread_create(&writers[i], NULL, &Writer_o, (void*)ptr)) {
             printf("Error creating writer\n");
         }
     }
@@ -134,4 +131,8 @@ void Init_o(int readersCount, int writersCount){
     if (pthread_join(readers[0], NULL) == -1) {
         printf("%s", strerror(errno));
     }
+
+    free(serviceQueue.prio_waiting);
+    free(serviceQueue.prio_released);
+    free(ptr);
 }

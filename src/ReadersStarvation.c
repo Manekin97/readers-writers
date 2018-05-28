@@ -133,4 +133,6 @@ void Init_r(int readersCount, int writersCount) {
     if (pthread_join(readers[0], NULL) == -1) {
         printf("%s", strerror(errno));
     }
+
+    free(ptr);    
 }

@@ -9,10 +9,7 @@
 #include <unistd.h>
 #include <utime.h>
 
-queueState_t* state;
-
-int readersInside;
-int writersInside;
+int readersInside, writersInside, readersInQ, writersInQ;;
 
 sem_t resourceAccess; // controls access (read/write) to the resource
 sem_t readCountAccess; // for syncing changes to shared variable readCount
