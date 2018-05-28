@@ -72,7 +72,7 @@ void* Writer_r(void* value) {
 
         writers--;
         active_writers--;
-        writersInQ--;
+        writersInQ++;
         printf("ReaderQ: %d  WriterQ: %d [in: R:%d W:%d]\n", readersInQ, writersInQ, readers, active_writers);      
 
         if (writers > 0) {
