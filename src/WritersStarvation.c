@@ -13,7 +13,7 @@ void* Reader(void* value) {
         }
 
         readers++;
-        printf("[in: R:%d W:%d]\n", readers, writers);
+        printf("ReaderQ: x WriterQ: x [in: R:%d W:%d]\n", readers, writers);
 
         if (pthread_mutex_unlock(&m) != 0) {
             printf("%s", strerror(errno));
@@ -29,7 +29,7 @@ void* Reader(void* value) {
             pthread_cond_signal(&writersQ);
         }
 
-        printf("[in: R:%d W:%d]\n", readers, writers);
+        printf("ReaderQ: x WriterQ: x [in: R:%d W:%d]\n", readers, writers);
 
         if (pthread_mutex_unlock(&m) != 0) {
             printf("%s", strerror(errno));
@@ -50,7 +50,7 @@ void* Writer(void* value) {
         }
 
         writers++;
-        printf("[in: R:%d W:%d]\n", readers, writers);
+        printf("ReaderQ: x WriterQ: x [in: R:%d W:%d]\n", readers, writers);        
 
         if (pthread_mutex_unlock(&m) != 0) {
             printf("%s", strerror(errno));
@@ -63,7 +63,7 @@ void* Writer(void* value) {
         }
 
         writers--;
-        printf("[in: R:%d W:%d]\n", readers, writers);
+        printf("ReaderQ: x WriterQ: x [in: R:%d W:%d]\n", readers, writers);        
 
         if (pthread_cond_signal(&writersQ) != 0) {
             printf("%s", strerror(errno));

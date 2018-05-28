@@ -8,9 +8,11 @@
 #include <unistd.h>
 #include <utime.h>
 
-int readers, writers, active_writers;
+int readers, writers, active_writers, readersInQ, writersInQ;
 pthread_mutex_t m;
 pthread_cond_t writersQ, readersQ;
+
+queueState_t Qstate;
 
 void* Reader_r(void* value);
 

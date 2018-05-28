@@ -13,7 +13,8 @@ void* Reader_r(void* value) {
         }
 
         readers++;
-        printf("[in: R:%d W:%d]\n", readers, active_writers);
+        readersInQ--;
+        printf("ReaderQ: %d WriterQ: %d [in: R:%d W:%d]\n", readersInQ,  writersInQ, readers, active_writers);
 
         if (pthread_mutex_unlock(&m) != 0) {
             printf("%s", strerror(errno));
@@ -30,9 +31,10 @@ void* Reader_r(void* value) {
                 printf("%s", strerror(errno));
             }
         }
+        readersInQ++;        
 
-        printf("[in: R:%d W:%d]\n", readers, active_writers);
-
+        printf("ReaderQ: %d  WriterQ: %d [in: R:%d W:%d]\n", readersInQ, writersInQ, readers, active_writers);
+        
         if (pthread_mutex_unlock(&m) != 0) {
             printf("%s", strerror(errno));
         }
@@ -54,8 +56,10 @@ void* Writer_r(void* value) {
         }
 
         active_writers++;
-        printf("[in: R:%d W:%d]\n", readers, active_writers);
-
+        writersInQ--;
+        printf("ReaderQ: %d  WriterQ: %d [in: R:%d W:%d]\n", readersInQ, writersInQ, readers, active_writers);
+        
+        
         if (pthread_mutex_unlock(&m) != 0) {
             printf("%s", strerror(errno));
         }
@@ -68,7 +72,8 @@ void* Writer_r(void* value) {
 
         writers--;
         active_writers--;
-        printf("[in: R:%d W:%d]\n", readers, active_writers);
+        writersInQ--;
+        printf("ReaderQ: %d  WriterQ: %d [in: R:%d W:%d]\n", readersInQ, writersInQ, readers, active_writers);      
 
         if (writers > 0) {
             if (pthread_cond_signal(&writersQ) != 0) {
@@ -90,6 +95,8 @@ void Init_r(int readersCount, int writersCount) {
     readers = 0;
     writers = 0;
     active_writers = 0;
+    readersInQ = 0;
+    writersInQ = 0;
 
     /* Initialize readers and writers set */
     pthread_t readers[readersCount];
