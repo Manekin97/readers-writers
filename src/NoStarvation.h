@@ -1,5 +1,4 @@
 #include "PriorityQueue.h"
-#include "queueState.h"
 #include <errno.h>
 #include <pthread.h>
 #include <semaphore.h>
