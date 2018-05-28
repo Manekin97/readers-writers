@@ -95,8 +95,8 @@ void Init_r(int readersCount, int writersCount) {
     readers = 0;
     writers = 0;
     active_writers = 0;
-    readersInQ = 0;
-    writersInQ = 0;
+    readersInQ = readersCount;
+    writersInQ = writersCount;
 
     /* Initialize readers and writers set */
     pthread_t readers[readersCount];
