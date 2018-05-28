@@ -12,8 +12,6 @@ int readers, writers, active_writers, readersInQ, writersInQ;
 pthread_mutex_t m;
 pthread_cond_t writersQ, readersQ;
 
-queueState_t Qstate;
-
 void* Reader_r(void* value);
 
 void* Writer_r(void* value);

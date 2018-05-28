@@ -10,8 +10,7 @@
 
 pthread_mutex_t m;
 pthread_cond_t writersQ, readersQ;
-int readers, writers;
-
+int readers, writers, readersInQ, writersInQ;;
 
 void* Reader(void* value);
 
