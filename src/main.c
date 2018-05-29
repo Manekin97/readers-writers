@@ -6,7 +6,7 @@
 
 int main(int argc, char* const argv[]) {
     if (argc < 4) {
-        fprintf(stderr, "Wrong number of arguments");
+        fprintf(stderr, "Wrong number of arguments. \n");
         exit(EXIT_FAILURE);
     }
     
@@ -15,7 +15,7 @@ int main(int argc, char* const argv[]) {
 
     
     if (readersCount < 0 || writersCount < 0) {
-        fprintf(stderror, "Number of readers and writers must be a positive integer.");   
+        fprintf(stderr, "Number of readers and writers must be a positive integer. \n");   
         exit(EXIT_FAILURE);             
     }
 
@@ -32,7 +32,11 @@ int main(int argc, char* const argv[]) {
             Init_o(readersCount, writersCount);
             break;
         case '?':
-            printf("Wrong Arguments. \n");
+            printf("Available options: \n");
+            printf("    -r (readers starvation) \n");
+            printf("    -w (writers starvation) \n");
+            printf("    -r (fair solution) \n");
+            
             exit(EXIT_FAILURE);
         }
     }
