@@ -2,15 +2,20 @@
 
 void *Reader_o(void *value) {
     while (1) {
-        Wait(&serviceQueue, GetHighestWaitingPriority(&serviceQueue));  //  Wait in line to be serviced
+        if(Wait(&serviceQueue, GetHighestWaitingPriority(&serviceQueue)) == -1) {  //  Wait in line to be serviced
+            fprintf(stderr, "%s \n", strerror(errno));
+            exit(EXIT_FAILURE);
+        };
 
         if (sem_wait(&readCountAccess) == -1) { //  Request exclusive access to readCount
-            printf("%s", strerror(errno));
+            fprintf(stderr, "%s \n", strerror(errno));
+        exit(EXIT_FAILURE);
         }
 
         if (readersInside == 0) { //  if there are no readers already reading
             if (sem_wait(&resourceAccess) == -1) { //   request resource access for readers (writers blocked)
-                printf("%s", strerror(errno));
+                fprintf(stderr, "%s \n", strerror(errno));
+        exit(EXIT_FAILURE);
             }
         }
 
@@ -18,16 +23,21 @@ void *Reader_o(void *value) {
         readersInQ--; //  Decrease the number of readers in queue
         printf("ReaderQ: %d WriterQ: %d [in: R:%d W:%d]\n", readersInQ, writersInQ, readersInside, writersInside);
 
-        Post(&serviceQueue); //  let next in line be serviced
+        if(Post(&serviceQueue) == -1) { //  let next in line be serviced
+            fprintf(stderr, "%s \n", strerror(errno));
+            exit(EXIT_FAILURE)
+        }
 
         if (sem_post(&readCountAccess) == -1) { //  release access to readCount
-            printf("%s", strerror(errno));
+           fprintf(stderr, "%s \n", strerror(errno));
+        exit(EXIT_FAILURE);
         }
 
         sleep(1); // Simulate reading
 
         if (sem_wait(&readCountAccess) == -1) { //  request exclusive access to readCount
-            printf("%s", strerror(errno));
+            fprintf(stderr, "%s \n", strerror(errno));
+        exit(EXIT_FAILURE);
         }
 
         readersInside--; //  Decrease the number of readers inside
@@ -36,25 +46,34 @@ void *Reader_o(void *value) {
 
         if (readersInside == 0) { // if there are no readers left
             if (sem_post(&resourceAccess) == -1) { //  request exclusive access to readCount
-                printf("%s", strerror(errno));
+                fprintf(stderr, "%s \n", strerror(errno));
+        exit(EXIT_FAILURE);
             }
         }
 
         if (sem_post(&readCountAccess) == -1) { //  release access to readCount
-            printf("%s", strerror(errno));
+            fprintf(stderr, "%s \n", strerror(errno));
+        exit(EXIT_FAILURE);
         }
     }
 }
 
 void *Writer_o(void *value) {
     while (1) {
-        Wait(&serviceQueue, GetHighestWaitingPriority(&serviceQueue)); //  wait in line to be serviced
+        if(Wait(&serviceQueue, GetHighestWaitingPriority(&serviceQueue)) == -1) {  //  Wait in line to be serviced
+            fprintf(stderr, "%s \n", strerror(errno));
+            exit(EXIT_FAILURE);
+        };
 
         if (sem_wait(&resourceAccess) == -1) { //  request exclusive access to resource
-            printf("%s", strerror(errno));
+            fprintf(stderr, "%s \n", strerror(errno));
+        exit(EXIT_FAILURE);
         }
 
-        Post(&serviceQueue); //  let next in line be serviced
+        if(Post(&serviceQueue) == -1) { //  let next in line be serviced
+            fprintf(stderr, "%s \n", strerror(errno));
+            exit(EXIT_FAILURE)
+        }
 
         writersInside++; //  Increase the number of writers inside
         writersInQ--; //  Decrease the number of writers in queue
@@ -63,11 +82,12 @@ void *Writer_o(void *value) {
         sleep(1);
 
         writersInside--; //  Decrease the number of writers inside
-       writersInQ++; //  Increase the number of writers in queue
+        writersInQ++; //  Increase the number of writers in queue
         printf("ReaderQ: %d WriterQ: %d [in: R:%d W:%d]\n", readersInQ, writersInQ, readersInside, writersInside);
 
         if (sem_post(&resourceAccess) == -1) { // release resource access for next reader/writer
-            printf("%s", strerror(errno));
+            fprintf(stderr, "%s \n", strerror(errno));
+        exit(EXIT_FAILURE);
         }
     }
 }
@@ -97,19 +117,23 @@ void Init_o(int readersCount, int writersCount){
     }
 
     if (pthread_mutex_init(&(serviceQueue.mutex), NULL) == -1) {
-        printf("%s", strerror(errno));
+        fprintf(stderr, "%s \n", strerror(errno));
+        exit(EXIT_FAILURE);
     }
 
     if (pthread_cond_init(&(serviceQueue.cv), NULL) == -1) {
-        printf("%s", strerror(errno));
+        fprintf(stderr, "%s \n", strerror(errno));
+        exit(EXIT_FAILURE);
     }
 
     if (sem_init(&resourceAccess, 0, 1) == -1) {
-        printf("%s", strerror(errno));
+        fprintf(stderr, "%s \n", strerror(errno));
+        exit(EXIT_FAILURE);
     }
 
     if (sem_init(&readCountAccess, 0, 1) == -1) {
-        printf("%s", strerror(errno));
+        fprintf(stderr, "%s \n", strerror(errno));
+        exit(EXIT_FAILURE);
     }
 
     /* Create threads */
@@ -117,19 +141,22 @@ void Init_o(int readersCount, int writersCount){
     for (int i = 0; i < readersCount; i++) {
         *ptr = i;
         if (pthread_create(&readers[i], NULL, &Reader_o, (void*)ptr)) {
-            printf("Error creating reader\n");
+            fprintf(stderr, "%s \n", strerror(errno));
+        exit(EXIT_FAILURE);
         }
     }
 
     for (int i = 0; i < writersCount; i++) {
         *ptr = i;
         if (pthread_create(&writers[i], NULL, &Writer_o, (void*)ptr)) {
-            printf("Error creating writer\n");
+           fprintf(stderr, "%s \n", strerror(errno));
+        exit(EXIT_FAILURE);
         }
     }
 
     if (pthread_join(readers[0], NULL) == -1) {
-        printf("%s", strerror(errno));
+        fprintf(stderr, "%s \n", strerror(errno));
+        exit(EXIT_FAILURE);
     }
 
     free(serviceQueue.prio_waiting);

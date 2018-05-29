@@ -1,7 +1,10 @@
 #include "PriorityQueue.h"
 
 void Post(priosem_t *sem){
-    Lock(&(sem->mutex));
+    if(Lock(&(sem->mutex)) == -1) {
+        return -1;
+    }
+
     sem->value++;
 
     if (sem->value <= 0 && IsThreadWaiting(sem)) {
@@ -10,40 +13,55 @@ void Post(priosem_t *sem){
         sem->prio_waiting[prio]--;
         sem->prio_released[prio]++;
 
-        Cond_broadcast(&(sem->cv), &(sem->mutex));
+        if(Cond_broadcast(&(sem->cv), &(sem->mutex)) == 1){
+            return -1;
+        }
     }
 
-    Unlock(&(sem->mutex));
+    if(Unlock(&(sem->mutex)) == -1){
+        return -1;
+    }
 }
 
 void Wait(priosem_t *sem, int prio) {
-    Lock(&(sem->mutex));
+    if(Lock(&(sem->mutex)) == -1) {
+        return -1;
+    }
+
     sem->value--;
 
     if (sem->value < 0) {
         // get in line
         sem->prio_waiting[prio]++;
         while (sem->prio_released[prio] < 0) {
-            Cond_wait(&(sem->cv), &(sem->mutex));
+            if(Cond_wait(&(sem->cv), &(sem->mutex)) == -1){
+                return -1;
+            }
         }
 
         // ok to leave
         sem->prio_released[prio]--;
     }
 
-    Unlock(&(sem->mutex));
+    if(Unlock(&(sem->mutex)) == -1){
+        return -1;
+    }
 }
 
 void Lock(pthread_mutex_t *mutex) {
     if (pthread_mutex_lock(mutex) == -1) {
-        printf("%s", strerror(errno));
+        return -1;
     }
+
+    return 0;
 }
 
 void Unlock(pthread_mutex_t *mutex) {
     if (pthread_mutex_unlock(mutex) == -1) {
-        printf("%s", strerror(errno));
+        return -1;
     }
+
+    return 0;
 }
 
 int IsThreadWaiting(priosem_t *sem) {
@@ -66,16 +84,22 @@ int GetHighestWaitingPriority(priosem_t *sem) {
     return -1;
 }
 
-void Cond_broadcast(pthread_cond_t *cond, pthread_mutex_t *mutex) {
+int Cond_broadcast(pthread_cond_t *cond, pthread_mutex_t *mutex) {
     if (pthread_cond_broadcast(cond) == -1) {
-        printf("%s", strerror(errno));
+        return -1;
     }
 
-    Unlock(mutex);
+    if(Unlock(mutex) == -1) {
+        return -1;
+    }
+    
+    return 0;
 }
 
-void Cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex) {
+int Cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex) {
     if (pthread_cond_wait(cond, mutex) == -1) {
-        printf("%s", strerror(errno));
+        return -1;
     }
+    
+    return 0;
 }

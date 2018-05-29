@@ -11,10 +11,9 @@ int main(int argc, char* const argv[]) {
     }
     
     const int readersCount = atoi(argv[1]);
-    const int writersCount = atoi(argv[2]);
-
+    const int writersCount = atoi(argv[2]);    
     
-    if (readersCount < 0 || writersCount < 0) {
+    if (readersCount <= 0 || writersCount <= 0) {
         fprintf(stderr, "Number of readers and writers must be a positive integer. \n");   
         exit(EXIT_FAILURE);             
     }
