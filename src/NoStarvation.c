@@ -2,9 +2,9 @@
 
 void *Reader_o(void *value) {
     while (1) {
-        Wait(&serviceQueue, GetHighestWaitingPriority(&serviceQueue)); //  wait in line to be serviced
+        Wait(&serviceQueue, GetHighestWaitingPriority(&serviceQueue));  //  Wait in line to be serviced
 
-        if (sem_wait(&readCountAccess) == -1) { //  request exclusive access to readCount
+        if (sem_wait(&readCountAccess) == -1) { //  Request exclusive access to readCount
             printf("%s", strerror(errno));
         }
 

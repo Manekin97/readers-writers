@@ -2,39 +2,40 @@
 
 void* Reader(void* value) {
     while (1) {
-        if (pthread_mutex_lock(&m) != 0) {
+        if (pthread_mutex_lock(&m) != 0) {  //  Block the mutex (A reader is trying to enter)
             printf("%s", strerror(errno));
         }
 
-        while (!(writers == 0)) {
-            if (pthread_cond_wait(&readersQ, &m) != 0) {
+        while (!(writers == 0)) {   //  While there are writers inside
+            if (pthread_cond_wait(&readersQ, &m) != 0) {    //  Wait
                 printf("%s", strerror(errno));
             }
         }
 
-        readers++;
-        readersInQ--;
-        printf("ReaderQ: %d  WriterQ: %d [in: R:%d W:%d]\n", readersInQ, writersInQ, readers, writers);      
-        
-
-        if (pthread_mutex_unlock(&m) != 0) {
-            printf("%s", strerror(errno));
-        }
-
-        sleep(1);
-
-        if (pthread_mutex_lock(&m) != 0) {
-            printf("%s", strerror(errno));
-        }
-
-        if (--readers == 0) {
-            pthread_cond_signal(&writersQ);
-        }
-
-        readersInQ++;
+        readers++;  //  Reader entered (Increment number of readers inside)
+        readersInQ--;   //  Decrement number of readers in queue
         printf("ReaderQ: %d  WriterQ: %d [in: R:%d W:%d]\n", readersInQ, writersInQ, readers, writers);
 
-        if (pthread_mutex_unlock(&m) != 0) {
+        if (pthread_mutex_unlock(&m) != 0) {    //  Release the mutex    
+            printf("%s", strerror(errno));
+        }
+
+        sleep(1);   //  Simulate reading
+
+        if (pthread_mutex_lock(&m) != 0) {  //  Block the mutex (A reader is trying to leave)
+            printf("%s", strerror(errno));
+        }
+
+        if (--readers == 0) {    //  Decrement number of readers inside and if it's the last reader
+            if (pthread_cond_signal(&writersQ) != 0) {  //  Signal a writer that library is empty
+                printf("%s", strerror(errno));
+            }
+        }
+
+        readersInQ++;   //  Go back to queue (Increment number of readers in queue)
+        printf("ReaderQ: %d  WriterQ: %d [in: R:%d W:%d]\n", readersInQ, writersInQ, readers, writers);
+
+        if (pthread_mutex_unlock(&m) != 0) {    //  Release the mutex (A Reader has left)
             printf("%s", strerror(errno));
         }
     }
@@ -42,43 +43,43 @@ void* Reader(void* value) {
 
 void* Writer(void* value) {
     while (1) {
-        if (pthread_mutex_lock(&m) != 0) {
+        if (pthread_mutex_lock(&m) != 0) {  //  Block the mutex (A writer is trying to enter)
             printf("%s", strerror(errno));
         }
 
-        while (!((readers == 0) && (writers == 0))) {
+        while (!((readers == 0) && (writers == 0))) {   //  While there are readers inside or a writers
             if (pthread_cond_wait(&writersQ, &m) != 0) {
                 printf("%s", strerror(errno));
             }
         }
 
-        writers++;
-        writersInQ--;
+        writers++;  //  Increment number of writers inside
+        writersInQ--;   //  Decrement number of writers in queue
         printf("ReaderQ: %d  WriterQ: %d [in: R:%d W:%d]\n", readersInQ, writersInQ, readers, writers);     
 
-        if (pthread_mutex_unlock(&m) != 0) {
+        if (pthread_mutex_unlock(&m) != 0) {    //  Release the mutex
             printf("%s", strerror(errno));
         }
 
-        sleep(1);
+        sleep(1);   //  Simulate writing
 
-        if (pthread_mutex_lock(&m) != 0) {
+        if (pthread_mutex_lock(&m) != 0) {  //  Lock the mutex (A writer is trying to leave)
             printf("%s", strerror(errno));
         }
 
-        writers--;
-        writersInQ++;
+        writers--;  //  Decrement number of writers inside
+        writersInQ++;   //  Increment number of writers in queue
         printf("ReaderQ: %d  WriterQ: %d [in: R:%d W:%d]\n", readersInQ, writersInQ, readers, writers);      
 
-        if (pthread_cond_signal(&writersQ) != 0) {
+        if (pthread_cond_signal(&writersQ) != 0) {  //  Signal a writer that he can enter
             printf("%s", strerror(errno));
         }
 
-        if (pthread_cond_broadcast(&readersQ) != 0) {
+        if (pthread_cond_broadcast(&readersQ) != 0) {   //  Signal all readers that they can enter
             printf("%s", strerror(errno));
         }
 
-        if (pthread_mutex_unlock(&m) != 0) {
+        if (pthread_mutex_unlock(&m) != 0) {    //  Release the mutex (A writer has left)
             printf("%s", strerror(errno));
         }
     }

@@ -5,8 +5,19 @@
 #include <stdlib.h>
 
 int main(int argc, char* const argv[]) {
+    if (argc < 4) {
+        fprintf(stderr, "Wrong number of arguments");
+        exit(EXIT_FAILURE);
+    }
+    
     const int readersCount = atoi(argv[1]);
     const int writersCount = atoi(argv[2]);
+
+    
+    if (readersCount < 0 || writersCount < 0) {
+        fprintf(stderror, "Number of readers and writers must be a positive integer.");   
+        exit(EXIT_FAILURE);             
+    }
 
     unsigned int argument;
     while ((argument = getopt(argc, argv, "rwn")) != -1) {
