@@ -113,8 +113,8 @@ void Init_r(int readersCount, int writersCount) {
 	writersInQ = writersCount;
 
 	/* Initialize readers and writers set */
-	pthread_t *readersArray = (int*)malloc(sizeof(int) * readersCount);
-	pthread_t *writersArray = (int*)malloc(sizeof(int) * writersCount);
+	pthread_t *readersArray = (pthread_t*)malloc(sizeof(int) * readersCount);
+	pthread_t *writersArray = (pthread_t*)malloc(sizeof(int) * writersCount);
 
 	if (pthread_cond_init(&readersQ, NULL) != 0) {
 		fprintf(stderr, "%s \n", strerror(errno));
