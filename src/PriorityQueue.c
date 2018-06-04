@@ -73,10 +73,9 @@ int IsThreadWaiting(priosem_t *sem) {
 }
 
 int GetHighestWaitingPriority(priosem_t *sem) {
-	for (int i = sem->threadsCount - 1; i >= 0; i--) {
-		if (sem->prio_waiting[i] > 0) {	//	If there are any threads waiting at ith priority
-			// return sem->prio_waiting[i];	//	return
-			return i;
+	for (int priority = sem->threadsCount - 1; priority >= 0; priority--) {
+		if (sem->prio_waiting[priority] > 0) {	//	If there are any threads waiting
+			return priority;
 		}
 	}
 

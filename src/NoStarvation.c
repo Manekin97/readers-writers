@@ -131,7 +131,7 @@ void Init_o(int readersCount, int writersCount) {
 		exit(EXIT_FAILURE);
 	}
 
-	if (sem_init(&readCountAccess, 0, 1) == -1) {
+	if (sem_init(&readearsAccess, 0, 1) == -1) {
 		fprintf(stderr, "%s \n", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
