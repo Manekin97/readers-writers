@@ -54,7 +54,7 @@ void* Writer(void* value) {
 			exit(EXIT_FAILURE);
 		}
 
-		while (!((readers == 0) && (writers == 0))) {   //  While there are readers inside or a writers
+		while (!((readers == 0) && (writers == 0))) {   //  While there are readers or writers inside 
 			if (pthread_cond_wait(&writersQ, &m) != 0) {
 				fprintf(stderr, "%s \n", strerror(errno));
 				exit(EXIT_FAILURE);
@@ -81,12 +81,12 @@ void* Writer(void* value) {
 		writersInQ++;   //  Increment number of writers in queue
 		printf("ReaderQ: %d  WriterQ: %d [in: R:%d W:%d]\n", readersInQ, writersInQ, readers, writers);
 
-		if (pthread_cond_signal(&writersQ) != 0) {  //  Signal a writer that he can enter
+		if (pthread_cond_broadcast(&readersQ) != 0) {   //  Signal all readers that they can enter
 			fprintf(stderr, "%s \n", strerror(errno));
 			exit(EXIT_FAILURE);
 		}
-
-		if (pthread_cond_broadcast(&readersQ) != 0) {   //  Signal all readers that they can enter
+		
+		if (pthread_cond_signal(&writersQ) != 0) {  //  Signal a writer that he can enter
 			fprintf(stderr, "%s \n", strerror(errno));
 			exit(EXIT_FAILURE);
 		}
@@ -99,7 +99,6 @@ void* Writer(void* value) {
 }
 
 void Init(int readersCount, int writersCount) {
-	;
 	readers = 0;
 	writers = 0;
 	readersInQ = readersCount;

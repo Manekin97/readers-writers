@@ -7,51 +7,51 @@ void *Reader_o(void *value) {
 			exit(EXIT_FAILURE);
 		};
 
-		if (sem_wait(&readCountAccess) == -1) { //  Request exclusive access to readCount
+		if (sem_wait(&readersAccess) == -1) {	//	Lock the semaphore to ensure only one thread has acces to readers variable
 			fprintf(stderr, "%s \n", strerror(errno));
 			exit(EXIT_FAILURE);
 		}
 
-		if (readersInside == 0) { //  if there are no readers already reading
-			if (sem_wait(&resourceAccess) == -1) { //   request resource access for readers (writers blocked)
+		if (readers == 0) {	//	If there are no readers inside
+			if (sem_wait(&libraryAccess) == -1) {	//	Lock the semaphore (Prevent writers from accessing the library)
 				fprintf(stderr, "%s \n", strerror(errno));
 				exit(EXIT_FAILURE);
 			}
 		}
 
-		readersInside++; //  Increase the number of readers inside
-		readersInQ--; //  Decrease the number of readers in queue
-		printf("ReaderQ: %d WriterQ: %d [in: R:%d W:%d]\n", readersInQ, writersInQ, readersInside, writersInside);
+		readers++;	//	Increase the number of readers inside
+		readersInQ--;	//	Decrease the number of readers in queue
+		printf("ReaderQ: %d WriterQ: %d [in: R:%d W:%d]\n", readersInQ, writersInQ, readers, writers);
 
-		if (Post(&serviceQueue) == -1) { //  let next in line be serviced
-			fprintf(stderr, "%s \n", strerror(errno));
-			exit(EXIT_FAILURE)
-		}
-
-		if (sem_post(&readCountAccess) == -1) { //  release access to readCount
+		if (Post(&serviceQueue) == -1) {	//	Let next in line to be serviced
 			fprintf(stderr, "%s \n", strerror(errno));
 			exit(EXIT_FAILURE);
 		}
 
-		sleep(1); // Simulate reading
-
-		if (sem_wait(&readCountAccess) == -1) { //  request exclusive access to readCount
+		if (sem_post(&readersAccess) == -1) {	//	Release the semaphore
 			fprintf(stderr, "%s \n", strerror(errno));
 			exit(EXIT_FAILURE);
 		}
 
-		readersInside--; //  Decrease the number of readers inside
-		readersInQ++; //  Increase the number of readers in queue
-		printf("ReaderQ: %d WriterQ: %d [in: R:%d W:%d]\n", readersInQ, writersInQ, readersInside, writersInside);
+		sleep(1);	//	Simulate reading
 
-		if (readersInside == 0) { // if there are no readers left
-			if (sem_post(&resourceAccess) == -1) { //  request exclusive access to readCount
+		if (sem_wait(&readersAccess) == -1) {	//	Lock the semaphore to ensure only one thread has acces to readers variable
+			fprintf(stderr, "%s \n", strerror(errno));
+			exit(EXIT_FAILURE);
+		}
+
+		readers--;	//	Decrease the number of readers inside
+		readersInQ++;	//	Increase the number of readers in queue
+		printf("ReaderQ: %d WriterQ: %d [in: R:%d W:%d]\n", readersInQ, writersInQ, readers, writers);
+
+		if (readers == 0) {	//	If it's the last reader
+			if (sem_post(&libraryAccess) == -1) {	//	Unlock the semaphore (Allow writers to access the library)
 				fprintf(stderr, "%s \n", strerror(errno));
 				exit(EXIT_FAILURE);
 			}
 		}
 
-		if (sem_post(&readCountAccess) == -1) { //  release access to readCount
+		if (sem_post(&readersAccess) == -1) {	//	Release the semaphore
 			fprintf(stderr, "%s \n", strerror(errno));
 			exit(EXIT_FAILURE);
 		}
@@ -60,32 +60,32 @@ void *Reader_o(void *value) {
 
 void *Writer_o(void *value) {
 	while (1) {
-		if (Wait(&serviceQueue, GetHighestWaitingPriority(&serviceQueue)) == -1) {  //  Wait in line to be serviced
+		if (Wait(&serviceQueue, GetHighestWaitingPriority(&serviceQueue)) == -1) {	//	Wait in line to be serviced
 			fprintf(stderr, "%s \n", strerror(errno));
 			exit(EXIT_FAILURE);
 		};
 
-		if (sem_wait(&resourceAccess) == -1) { //  request exclusive access to resource
+		if (sem_wait(&libraryAccess) == -1) {	//	Lock the semaphore (Prevent readers or other writers from accessing the library)
 			fprintf(stderr, "%s \n", strerror(errno));
 			exit(EXIT_FAILURE);
 		}
 
-		if (Post(&serviceQueue) == -1) { //  let next in line be serviced
+		if (Post(&serviceQueue) == -1) {	//	Let next in line be serviced
 			fprintf(stderr, "%s \n", strerror(errno));
-			exit(EXIT_FAILURE)
+			exit(EXIT_FAILURE);
 		}
 
-		writersInside++; //  Increase the number of writers inside
-		writersInQ--; //  Decrease the number of writers in queue
-		printf("ReaderQ: %d WriterQ: %d [in: R:%d W:%d]\n", readersInQ, writersInQ, readersInside, writersInside);
+		writers++;	//	Increase the number of writers inside
+		writersInQ--;	//	Decrease the number of writers in queue
+		printf("ReaderQ: %d WriterQ: %d [in: R:%d W:%d]\n", readersInQ, writersInQ, readers, writers);
 
 		sleep(1);
 
-		writersInside--; //  Decrease the number of writers inside
-		writersInQ++; //  Increase the number of writers in queue
-		printf("ReaderQ: %d WriterQ: %d [in: R:%d W:%d]\n", readersInQ, writersInQ, readersInside, writersInside);
+		writers--;	//	Decrease the number of writers inside
+		writersInQ++;	//	Increase the number of writers in queue
+		printf("ReaderQ: %d WriterQ: %d [in: R:%d W:%d]\n", readersInQ, writersInQ, readers, writers);
 
-		if (sem_post(&resourceAccess) == -1) { // release resource access for next reader/writer
+		if (sem_post(&libraryAccess) == -1) {	//	Unlock the semaphore to allow reader/writer to acces the library
 			fprintf(stderr, "%s \n", strerror(errno));
 			exit(EXIT_FAILURE);
 		}
@@ -94,8 +94,8 @@ void *Writer_o(void *value) {
 
 void Init_o(int readersCount, int writersCount) {
 	/* Initialize queue status */
-	readersInside = 0;
-	writersInside = 0;
+	readers = 0;
+	writers = 0;
 	readersInQ = readersCount;
 	writersInQ = writersCount;
 
@@ -126,7 +126,7 @@ void Init_o(int readersCount, int writersCount) {
 		exit(EXIT_FAILURE);
 	}
 
-	if (sem_init(&resourceAccess, 0, 1) == -1) {
+	if (sem_init(&libraryAccess, 0, 1) == -1) {
 		fprintf(stderr, "%s \n", strerror(errno));
 		exit(EXIT_FAILURE);
 	}

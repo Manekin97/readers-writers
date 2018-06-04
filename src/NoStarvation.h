@@ -8,11 +8,11 @@
 #include <unistd.h>
 #include <utime.h>
 
-int readersInside, writersInside, readersInQ, writersInQ;;
+int readers, writers, readersInQ, writersInQ;;
 
-sem_t resourceAccess; // controls access (read/write) to the resource
-sem_t readCountAccess; // for syncing changes to shared variable readCount
-priosem_t serviceQueue; // FAIRNESS: preserves ordering of requests (signaling must be FIFO)
+sem_t libraryAccess;   // Controls access to the libary
+sem_t readersAccess;  //  Ensures only one thread modifies readersInside variable
+priosem_t serviceQueue; //  Semaphore with priority queue
 
 void* Reader_o(void* value);
 

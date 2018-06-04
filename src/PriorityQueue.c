@@ -1,38 +1,37 @@
 #include "PriorityQueue.h"
 
 int Post(priosem_t *sem) {
-	if (Lock(&(sem->mutex)) == -1) {
+	if (Lock(&(sem->mutex)) == -1) {	//	Lock the mutex
 		return -1;
 	}
 
 	sem->value++;
 
-	if (sem->value <= 0 && IsThreadWaiting(sem)) {
-		int prio = GetHighestWaitingPriority(sem);
+	if (sem->value <= 0 && IsThreadWaiting(sem)) {	//	If there are threads waiting
+		int prio = GetHighestWaitingPriority(sem);	//	Get the highest priority
 
-		sem->prio_waiting[prio]--;
-		sem->prio_released[prio]++;
+		sem->prio_waiting[prio]--;	//	Decrement the number of waiting threads with priority prio
+		sem->prio_released[prio]++;	//	Increment the number of released threads with priority prio
 
-		if (Cond_broadcast(&(sem->cv), &(sem->mutex)) == 1) {
+		if (Cond_broadcast(&(sem->cv), &(sem->mutex)) == 1) {	//	Signal other threads
 			return -1;
 		}
 	}
 
-	if (Unlock(&(sem->mutex)) == -1) {
+	if (Unlock(&(sem->mutex)) == -1) {	//	Unlock the mutex
 		return -1;
 	}
 }
 
 int Wait(priosem_t *sem, int prio) {
-	if (Lock(&(sem->mutex)) == -1) {
+	if (Lock(&(sem->mutex)) == -1) {	//	Lock the mutex
 		return -1;
 	}
 
 	sem->value--;
 
-	if (sem->value < 0) {
-		// get in line
-		sem->prio_waiting[prio]++;
+	if (sem->value < 0) {	//	If there are threads waiting
+		sem->prio_waiting[prio]++;	// Get in line (Increment the number of waiting threads with priority prio)
 		while (sem->prio_released[prio] < 0) {
 			if (Cond_wait(&(sem->cv), &(sem->mutex)) == -1) {
 				return -1;
