@@ -8,11 +8,11 @@
 #include <utime.h>
 
 typedef struct priority_sem_s {
-	int value; // if negative, abs(sem->value) == no. of waiting threads
+	int value;	//	If negative its absolute value represents the amount of threads waiting on the semaphore
 	pthread_mutex_t mutex;
 	pthread_cond_t cv;
-	int* prio_waiting; // no. waiting (blocked) at each priority
-	int* prio_released; // no. waiters released (unblocked) at each priority
+	int* prio_waiting;	//	Array holding the number of threads waiting at each priority
+	int* prio_released; // Array holding the number of threads realeased at each priority
 	int threadsCount;
 } priosem_t;
 
