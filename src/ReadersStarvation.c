@@ -113,8 +113,8 @@ void Init_r(int readersCount, int writersCount) {
 	writersInQ = writersCount;
 
 	/* Initialize readers and writers set */
-	pthread_t readers[readersCount];
-	pthread_t writers[writersCount];
+	pthread_t *readersArray = (int*)malloc(sizeof(int) * readersCount);
+	pthread_t *writersArray = (int*)malloc(sizeof(int) * writersCount);
 
 	if (pthread_cond_init(&readersQ, NULL) != 0) {
 		fprintf(stderr, "%s \n", strerror(errno));
@@ -135,7 +135,7 @@ void Init_r(int readersCount, int writersCount) {
 	int* ptr = (int*)(malloc(sizeof(int)));
 	for (int i = 0; i < readersCount; i++) {
 		*ptr = i;
-		if (pthread_create(&readers[i], NULL, &Reader_r, (void*)ptr)) {
+		if (pthread_create(&readersArray[i], NULL, &Reader_r, (void*)ptr)) {
 			fprintf(stderr, "%s \n", strerror(errno));
 			exit(EXIT_FAILURE);
 		}
@@ -143,16 +143,18 @@ void Init_r(int readersCount, int writersCount) {
 
 	for (int i = 0; i < writersCount; i++) {
 		*ptr = i;
-		if (pthread_create(&writers[i], NULL, &Writer_r, (void*)ptr)) {
+		if (pthread_create(&writersArray[i], NULL, &Writer_r, (void*)ptr)) {
 			fprintf(stderr, "%s \n", strerror(errno));
 			exit(EXIT_FAILURE);
 		}
 	}
 
-	if (pthread_join(readers[0], NULL) == -1) {
+	if (pthread_join(readersArray[0], NULL) == -1) {
 		fprintf(stderr, "%s \n", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
 	free(ptr);
+	free(readersArray);
+	free(writersArray);
 }
