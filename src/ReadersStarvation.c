@@ -16,7 +16,7 @@ void* Reader_r(void* value) {
 
 		readers++;  //  Reader entered (Increment number of readers inside)
 		readersInQ--;   //  Decrement number of readers in queue
-		printf("ReaderQ: %d WriterQ: %d [in: R:%d W:%d (writing: %d)]\n", readersInQ, writersInQ, readers, writers, active_writers);
+		printf("ReaderQ: %d WriterQ: %d [in: R:%d W:%d]\n", readersInQ, writersInQ, readers, active_writers);
 
 		if (pthread_mutex_unlock(&m) != 0) {    //  Release the mutex
 			fprintf(stderr, "%s \n", strerror(errno));
@@ -38,7 +38,7 @@ void* Reader_r(void* value) {
 		}
 		readersInQ++;   //  Go back to queue (Increment number of readers in queue)
 
-		printf("ReaderQ: %d  WriterQ: %d [in: R:%d W:%d (writing: %d)]\n", readersInQ, writersInQ, readers, writers, active_writers);
+		printf("ReaderQ: %d  WriterQ: %d [in: R:%d W:%d]\n", readersInQ, writersInQ, readers, active_writers);
 
 		if (pthread_mutex_unlock(&m) != 0) {    //  Release the mutex (Reader has left)
 			fprintf(stderr, "%s \n", strerror(errno));
@@ -55,7 +55,6 @@ void* Writer_r(void* value) {
 		}
 
 		writers++;  //  A writer has entered, but is not writing yet (Increment number of writers inside)
-		writersInQ--;   //  Decrement number of writers in queue
 
 		while (!((readers == 0) && (active_writers == 0))) {    //  While there are readers inside or a writer is writing
 			if (pthread_cond_wait(&writersQ, &m) != 0) {    //  Wait
@@ -65,7 +64,8 @@ void* Writer_r(void* value) {
 		}
 
 		active_writers++;   //  Writer started writing (Increment number of writers writing)
-		printf("ReaderQ: %d  WriterQ: %d [in: R:%d W:%d (writing: %d)]\n", readersInQ, writersInQ, readers, writers, active_writers);
+		writersInQ--;   //  Decrement number of writers in queue		
+		printf("ReaderQ: %d  WriterQ: %d [in: R:%d W:%d]\n", readersInQ, writersInQ, readers, active_writers);
 
 
 		if (pthread_mutex_unlock(&m) != 0) {    //  Release the mutex
@@ -83,7 +83,7 @@ void* Writer_r(void* value) {
 		writers--;  //  Decrement number of writers inside
 		active_writers--;   //  Decrement number of writers writing
 		writersInQ++;   //  Increment number of writers in queue
-		printf("ReaderQ: %d  WriterQ: %d [in: R:%d W:%d (writing: %d)]\n", readersInQ, writersInQ, readers, writers, active_writers);
+		printf("ReaderQ: %d  WriterQ: %d [in: R:%d W:%d]\n", readersInQ, writersInQ, readers, active_writers);
 
 		if (writers > 0) {  //  If there are more than one writer inside
 			if (pthread_cond_signal(&writersQ) != 0) {  //  Signal another writer (Indicate he can enter)
